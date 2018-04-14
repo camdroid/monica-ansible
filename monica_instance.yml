@@ -1,0 +1,14 @@
+---
+- name: Spin up EC2 instance
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  tasks:
+  - name: Spin up EC2 instance
+    ec2:
+      image: ami-25615740
+      instance_type: t2.nano
+      region: "us-east-2"
+      instance_tags:
+        Name: "monica_ec2"
+
