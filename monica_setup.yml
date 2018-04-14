@@ -1,0 +1,7 @@
+---
+- name: Set up Monica on a given EC2 instance
+  hosts: webserver
+  tasks:
+  - yum:
+      name: vim
+      state: latest

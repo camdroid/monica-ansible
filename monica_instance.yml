@@ -7,8 +7,29 @@
   - name: Spin up EC2 instance
     ec2:
       image: ami-25615740
+      keypair: Monica
       instance_type: t2.nano
       region: "us-east-2"
       instance_tags:
         Name: "monica_ec2"
+      state: present
+      count: 1
+      wait: yes
+      assign_public_ip: yes
+      vpc_subnet_id: "subnet-0488a24e"
+    register: ec2
 
+  - debug:
+      msg: "{{ ec2.instances[0].public_ip }}"
+
+  - name: Add EC2 instance to inventory
+    lineinfile:
+      path: "inventory.yml"
+      insertafter: "[webserver]"
+      line: "{{ ec2.instances[0].public_ip }} ansible_ssh_user=ec2-user"
+
+  - name: Wait for SSH
+    wait_for:
+      host: "{{ ec2.instances[0].public_ip }}"
+      port: 22
+      state: started
