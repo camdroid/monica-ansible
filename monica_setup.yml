@@ -3,30 +3,35 @@
   hosts: webserver
   tasks:
   - yum:
-      name: vim
+      name: "{{ item }}"
       state: latest
+    become: yes
+    with_items:
+      - vim
+      - docker
+      - git
+
   - yum:
       name: "*"
       state: latest
     become: yes
 
+  - name: Download Monica source
+    git:
+      dest: /home/ec2-user/monica
+      repo: https://github.com/monicahq/monica.git
+
   - name: Download docker-compose
     become: true
     get_url:
       url: "https://github.com/docker/compose/releases/download/1.21.0/docker-compose-Linux-x86_64"
-      dest: /usr/local/bin/docker-compose
+      dest: /usr/bin/docker-compose
       mode: 0755
 
   - name: Add epel repo
     become: yes
     yum:
       name: epel-release
-      state: present
-
-  - name: Install docker
-    become: yes
-    yum:
-      name: docker
       state: present
 
   # Split this into a subtask instead of repeating to see whether each file already exists
@@ -40,38 +45,37 @@
       path: .env
     register: env_stat
 
-  - name: Create .env if needed
-    file:
-      path: /home/ec2-user/.env
-      state: touch
-    when: not env_stat.stat.exists
-
   - name: Get env file
+    when: not env_stat.stat.exists
     get_url:
       url: https://raw.githubusercontent.com/monicahq/monica/master/.env.example
-      dest: /home/ec2-user/.env
+      dest: /home/ec2-user/monica/.env
       force: yes
 
   - name: Check whether docker-compose.yml exists
     stat:
-      path: /home/ec2-user/docker-compose.yml
+      path: /home/ec2-user/monica/docker-compose.yml
     register: docker_stat
 
-  - name: Create docker-compose.yml if needed
-    file:
-      path: /home/ec2-user/docker-compose.yml
-      state: touch
-    when: not docker_stat.stat.exists
-
   - name: Get docker-compose.yml
+    when: not docker_stat.stat.exists
     get_url:
       url: https://raw.githubusercontent.com/monicahq/monica/master/docker-compose.yml
-      dest: /home/ec2-user/docker-compose.yml
+      dest: /home/ec2-user/monica/docker-compose.yml
       force: yes
 
   # Do NOT leave this running in prod!
   - name: Set APP_KEY
     lineinfile:
-      path: /home/ec2-user/.env
+      path: /home/ec2-user/monica/.env
       state: present
       regexp: "APP_KEY="
+
+  - debug:
+      msg: "Follow directions at https://github.com/monicahq/monica/wiki/Installing-Monica-(Generic)"
+
+  - debug:
+      msg: "don't forget to 'sudo service docker start'"
+
+  # Needed to use sudo docker-compose
+      # TODO Get docker working without sudo

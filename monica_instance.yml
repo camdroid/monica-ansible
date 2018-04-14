@@ -8,7 +8,7 @@
     ec2:
       image: ami-25615740
       keypair: Monica
-      instance_type: t2.nano
+      instance_type: t2.micro
       region: "us-east-2"
       instance_tags:
         Name: "monica_ec2"
