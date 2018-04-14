@@ -28,3 +28,50 @@
     yum:
       name: docker
       state: present
+
+  # Split this into a subtask instead of repeating to see whether each file already exists
+  - set_fact:
+      files:
+        - { name: '.env', url: 'https://raw.githubusercontent.com/monicahq/monica/master/.env.example' }
+        - { name: 'docker-compose.yml', url: 'https://raw.githubusercontent.com/monicahq/monica/master/docker-compose.yml' }
+
+  - name: Check whether .env exists
+    stat:
+      path: .env
+    register: env_stat
+
+  - name: Create .env if needed
+    file:
+      path: /home/ec2-user/.env
+      state: touch
+    when: not env_stat.stat.exists
+
+  - name: Get env file
+    get_url:
+      url: https://raw.githubusercontent.com/monicahq/monica/master/.env.example
+      dest: /home/ec2-user/.env
+      force: yes
+
+  - name: Check whether docker-compose.yml exists
+    stat:
+      path: /home/ec2-user/docker-compose.yml
+    register: docker_stat
+
+  - name: Create docker-compose.yml if needed
+    file:
+      path: /home/ec2-user/docker-compose.yml
+      state: touch
+    when: not docker_stat.stat.exists
+
+  - name: Get docker-compose.yml
+    get_url:
+      url: https://raw.githubusercontent.com/monicahq/monica/master/docker-compose.yml
+      dest: /home/ec2-user/docker-compose.yml
+      force: yes
+
+  # Do NOT leave this running in prod!
+  - name: Set APP_KEY
+    lineinfile:
+      path: /home/ec2-user/.env
+      state: present
+      regexp: "APP_KEY="
